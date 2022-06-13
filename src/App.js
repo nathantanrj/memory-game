@@ -9,6 +9,10 @@ export default function App() {
   const [guess,setGuess] = useState(null)
   const [checkingGuess, setCheckingGuess] = useState(false)
   const [gameWon, setGameWon] = useState(true)
+  const [time,setTime] = useState(0)
+  const [timer, setTimer] = useState(false)
+  const [guessCount,setGuessCount] = useState(0)
+  const [bestRecord, setBestRecord] = useState(null)
 
   function shuffle(array) {
     let currentIndex = array.length,  randomIndex;
@@ -31,6 +35,8 @@ export default function App() {
   }
   function resetGame() {
     setGameStarted(false)
+    setTime(0)
+    setGuessCount(0)
     setShuffled(shuffle(images.concat(images)))
     setShuffled(prevState => {
       return prevState.map((item,i) => {
@@ -58,6 +64,7 @@ export default function App() {
         })
       })
       setGameStarted(true)
+      setTimer(true)
       console.log(gameStarted)
     }, 5000)
     return () => {clearTimeout(gameStartTimeout)}
@@ -68,8 +75,20 @@ export default function App() {
     const allPaired = shuffled.every(item => item.isPaired)
     if (allPaired) {
       setGameWon(true)
+      setTimer(false)
+      if (bestRecord === null || (time <= bestRecord[0] && guessCount <= bestRecord[1])) {
+        setBestRecord([time,guessCount])
+      }
     }
   },[shuffled])
+
+  useEffect(() => {
+    if (timer) {
+    setTimeout(() => {
+      setTime(prev => prev + 1)
+    }, 1000)
+  }
+  },[time,timer])
 
 
   function press(number,name) {
@@ -84,13 +103,14 @@ export default function App() {
         setGuess(name)
       } 
       else {
+        setGuessCount(prev => prev + 1)
         if (guess === name) { 
           setShuffled(prevState => {
             return prevState.map(item => {
               return (item.image === guess ? 
               {...item, isPaired: true} : item
             )})
-          })
+          })         
         }
         else {
           setCheckingGuess(true)
@@ -123,6 +143,14 @@ export default function App() {
       <div className="game-container">
           {(gameWon && gameStarted) && <Confetti />}
           <h1 className="game-title">Memory Game</h1>
+          <div className="scoreboard">
+            <h3 className="scoreboard-title ul">Scoreboard</h3>
+            <p>Time elapsed: {time}s</p> 
+            <p>No. of guesses: {guessCount}</p>
+            <h3 className="scoreboard-record ul">Best Results</h3>
+            <p>Time: {(bestRecord === null) ? <span>-</span>: bestRecord[0]}s</p> 
+            <p>Guesses: {(bestRecord === null) ? <span>-</span>: bestRecord[1]}</p>
+          </div>
           <div className="card-board">
             {card}
           </div>
